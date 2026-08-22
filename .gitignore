@@ -1,0 +1,12 @@
+/target/
+/LICENSE-APACHE
+/.qmlls.ini
+*.app/
+*.dSYM/
+.DS_Store
+.idea/
+.vscode/
+*.log
+/.env
+/.env.*
+!.env.example
