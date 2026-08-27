@@ -1,3 +1,8 @@
+#[path = "../generated/rust/env.rs"]
+mod env;
+#[path = "../generated/rust/runtime.rs"]
+mod env_runtime;
+
 pub mod bridge;
 pub mod core;
 pub mod runtime;
@@ -8,6 +13,8 @@ use std::pin::Pin;
 use tracing_subscriber::EnvFilter;
 
 fn main() {
+    let env_values = env_runtime::load_from_os();
+    let _ = &env_values;
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env()
