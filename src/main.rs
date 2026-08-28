@@ -13,8 +13,6 @@ use std::pin::Pin;
 use tracing_subscriber::EnvFilter;
 
 fn main() {
-    let env_values = env_runtime::load_from_os();
-    let _ = &env_values;
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env()
