@@ -4,6 +4,7 @@ use act_interfaces::creator_media::{
 };
 use chrono::{SecondsFormat, Utc};
 
+use super::RENDERER_NAME;
 use super::project::ValidatedProject;
 
 pub(super) fn successful_receipt(
@@ -48,7 +49,7 @@ pub(super) fn successful_receipt(
         },
         outputs,
         toolchain: Toolchain {
-            renderer: "act-desktop-app.rs".into(),
+            renderer: RENDERER_NAME.into(),
             renderer_version: env!("CARGO_PKG_VERSION").into(),
             ffmpeg_version,
         },

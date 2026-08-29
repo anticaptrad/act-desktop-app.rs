@@ -3,7 +3,8 @@
 The `act-render` binary turns a reviewed creator project into native MP4
 masters, variations, and 30–50 second clips. It is the headless rendering core
 for the Qt desktop studio; media frames remain inside Rust, FFmpeg, and native
-files and never cross the QML bridge.
+files and never cross the QML bridge. The pure-Rust renderer is a separate
+workspace crate so headless media targets never inherit CXX-Qt initializers.
 
 ## Contract and trust boundary
 
@@ -58,7 +59,7 @@ upload, while `publicEligible` remains false.
 ## Command line
 
 ```sh
-cargo run --bin act-render -- \
+cargo run -p act-creator-renderer --bin act-render -- \
   /absolute/project-root/project.json \
   /absolute/project-root \
   /absolute/project-root/render-receipt.json
@@ -75,9 +76,9 @@ digests must be replaced with real local SHA-256 values before use.
 ## Verification
 
 ```sh
-cargo fmt --check
-cargo test --locked
-cargo clippy --all-targets --locked -- -D warnings
+cargo fmt --all --check
+cargo test --workspace --locked
+cargo clippy --workspace --all-targets --locked -- -D warnings
 ```
 
 The integration test synthesizes a 30-second camera recording and a sound cue,

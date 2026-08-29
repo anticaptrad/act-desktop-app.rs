@@ -34,12 +34,12 @@ jobs:
         run: rustup component add rustfmt clippy
 
       - name: Check formatting
-        run: cargo fmt --check
+        run: cargo fmt --all --check
 
       - name: Run tests
         env:
           ACT_REQUIRE_FFMPEG_TEST: "1"
-        run: cargo test --locked
+        run: cargo test --workspace --locked
 
       - name: Run Clippy
-        run: cargo clippy --all-targets --locked -- -D warnings
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings

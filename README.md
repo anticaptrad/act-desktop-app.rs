@@ -45,10 +45,12 @@ Destination credentials are intentionally not accepted by this UI slice. They
 belong in the platform's server-side secret store and should be exposed through
 short-lived, least-privilege session grants.
 
-The headless renderer is available now:
+The headless renderer is isolated in the pure-Rust `act-creator-renderer`
+workspace crate, so it remains independently linkable and testable without a
+Qt/QML runtime:
 
 ```sh
-cargo run --bin act-render -- \
+cargo run -p act-creator-renderer --bin act-render -- \
   /absolute/project-root/project.json \
   /absolute/project-root \
   /absolute/project-root/render-receipt.json

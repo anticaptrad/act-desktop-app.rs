@@ -19,6 +19,9 @@ use self::project::ValidatedProject;
 
 pub use self::project::{EXPECTED_CHANNEL_ID, EXPECTED_CREATOR_HANDLE};
 
+/// Stable runtime identifier surfaced by the Qt studio and render receipts.
+pub const RENDERER_NAME: &str = "act-creator-renderer";
+
 const DEFAULT_COMMAND_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 
 /// Local renderer configuration. Provider credentials are deliberately absent.

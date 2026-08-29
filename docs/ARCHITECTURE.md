@@ -42,7 +42,9 @@ explicit degraded/recovering state and may drop video frames according to policy
 
 ## Offline creator data plane
 
-The post-production path is independently runnable through `act-render`:
+The post-production path is independently runnable through `act-render`. It
+lives in the pure-Rust `act-creator-renderer` workspace crate, while the Qt
+executable consumes its API without putting QML in the headless data plane:
 
 ```text
 act-interfaces creator project

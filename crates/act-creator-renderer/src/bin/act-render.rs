@@ -4,7 +4,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use act_desktop_app::media::{NativeRenderer, RendererConfig};
+use act_creator_renderer::{NativeRenderer, RendererConfig};
 
 fn main() -> ExitCode {
     match run() {

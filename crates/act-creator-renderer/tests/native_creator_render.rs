@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 
-use act_desktop_app::media::{NativeRenderer, RendererConfig};
+use act_creator_renderer::{NativeRenderer, RendererConfig};
 use act_interfaces::creator_media::{OutputKind, ReceiptReviewState, RenderStatus};
 use sha2::{Digest, Sha256};
 

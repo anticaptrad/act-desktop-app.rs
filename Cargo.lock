@@ -3,16 +3,11 @@
 version = 4
 
 [[package]]
-name = "act-desktop-app"
+name = "act-creator-renderer"
 version = "0.1.0"
 dependencies = [
  "act-interfaces",
- "anyhow",
  "chrono",
- "cxx",
- "cxx-qt",
- "cxx-qt-build",
- "cxx-qt-lib",
  "font8x8",
  "fontdb",
  "fontdue",
@@ -22,11 +17,25 @@ dependencies = [
  "sha2",
  "tempfile",
  "thiserror 2.0.20",
+ "wait-timeout",
+]
+
+[[package]]
+name = "act-desktop-app"
+version = "0.1.0"
+dependencies = [
+ "act-creator-renderer",
+ "anyhow",
+ "cxx",
+ "cxx-qt",
+ "cxx-qt-build",
+ "cxx-qt-lib",
+ "serde",
+ "thiserror 2.0.20",
  "tokio",
  "tracing",
  "tracing-subscriber",
  "url",
- "wait-timeout",
  "webrtc",
 ]
 
