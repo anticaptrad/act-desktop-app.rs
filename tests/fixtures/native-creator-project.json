@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "1.0",
+  "projectId": "den-262-native-lifecycle",
+  "creatorHandle": "@anticaptrad",
+  "title": "Native creator render lifecycle",
+  "assets": [
+    {
+      "assetId": "camera-a",
+      "kind": "camera",
+      "relativePath": "assets/camera.mp4",
+      "sha256": "__CAMERA_SHA256__",
+      "mediaType": "video/mp4",
+      "durationMs": 30000,
+      "rights": {
+        "sourceType": "originalCamera",
+        "owner": "AntiCap Trad",
+        "approved": true
+      }
+    },
+    {
+      "assetId": "cue-bell",
+      "kind": "soundCue",
+      "relativePath": "assets/cue.wav",
+      "sha256": "__CUE_SHA256__",
+      "mediaType": "audio/wav",
+      "durationMs": 400,
+      "rights": {
+        "sourceType": "soundCue",
+        "owner": "AntiCap Trad synthetic fixture",
+        "approved": true,
+        "sourceUrl": "https://github.com/anticaptrad/act-desktop-app.rs",
+        "licenseId": "MIT-synthetic-fixture",
+        "licenseName": "MIT",
+        "attribution": "Generated deterministically by the repository integration test."
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "segmentId": "opening-title",
+      "kind": "titleCard",
+      "startMs": 0,
+      "durationMs": 1000,
+      "text": {
+        "heading": "Record once. Publish thoughtfully.",
+        "position": "center",
+        "accentColor": "#66D9FF"
+      },
+      "motion": "zoomIn",
+      "crop": "fit",
+      "audioGainDb": 0,
+      "transition": {"kind": "fade", "durationMs": 300}
+    },
+    {
+      "segmentId": "camera-concept",
+      "kind": "source",
+      "startMs": 1000,
+      "durationMs": 30000,
+      "assetId": "camera-a",
+      "sourceInMs": 0,
+      "motion": "panRight",
+      "crop": "fill",
+      "audioGainDb": -1,
+      "transition": {"kind": "dissolve", "durationMs": 500}
+    },
+    {
+      "segmentId": "closing-interstitial",
+      "kind": "interstitial",
+      "startMs": 31000,
+      "durationMs": 1000,
+      "text": {
+        "heading": "Review before publishing",
+        "position": "center",
+        "accentColor": "#ADFF2F"
+      },
+      "motion": "panLeft",
+      "crop": "fit",
+      "audioGainDb": 0,
+      "transition": {"kind": "fade", "durationMs": 300}
+    }
+  ],
+  "captions": [
+    {
+      "startMs": 1000,
+      "endMs": 5000,
+      "text": "A synthetic camera concept proves the native editing path.",
+      "speaker": "Host"
+    }
+  ],
+  "audio": {
+    "targetLufs": -16,
+    "truePeakDb": -1.5,
+    "cues": [
+      {"assetId": "cue-bell", "startMs": 15000, "gainDb": -18}
+    ]
+  },
+  "outputs": [
+    {
+      "outputId": "master-landscape",
+      "kind": "master",
+      "relativePath": "outputs/master-landscape.mp4",
+      "aspectRatio": "16:9",
+      "width": 640,
+      "height": 360,
+      "durationMs": 32000,
+      "safeAreaPercent": 8,
+      "privacyStatus": "private"
+    },
+    {
+      "outputId": "clip-vertical",
+      "kind": "clip",
+      "relativePath": "outputs/clip-vertical.mp4",
+      "aspectRatio": "9:16",
+      "width": 360,
+      "height": 640,
+      "durationMs": 30000,
+      "safeAreaPercent": 12,
+      "privacyStatus": "private",
+      "sourceWindow": {"startMs": 1000, "endMs": 31000}
+    }
+  ],
+  "publication": {
+    "provider": "youtube",
+    "channelHandle": "@anticaptrad",
+    "channelId": "UC-Gloecwemo_Mh-VAjnUipg",
+    "privacyStatus": "private",
+    "rightsConfirmed": true,
+    "allowPublic": false
+  },
+  "review": {
+    "state": "approved",
+    "reviewedBy": "DEN-262 integration test",
+    "reviewedAt": "2026-08-29T00:00:00Z"
+  }
+}

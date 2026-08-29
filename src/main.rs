@@ -1,12 +1,4 @@
-#[path = "../generated/rust/env.rs"]
-mod env;
-#[path = "../generated/rust/runtime.rs"]
-mod env_runtime;
-
-pub mod bridge;
-pub mod core;
-pub mod runtime;
-
+use act_desktop_app::native_stack_summary;
 use cxx_qt::casting::Upcast;
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQmlEngine, QUrl};
 use std::pin::Pin;
@@ -20,6 +12,8 @@ fn main() {
         )
         .with_target(false)
         .init();
+
+    tracing::info!(stack = native_stack_summary(), "starting native studio");
 
     let mut application = QGuiApplication::new();
     let mut engine = QQmlApplicationEngine::new();
