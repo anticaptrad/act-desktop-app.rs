@@ -1,0 +1,18 @@
+# flags-2-env surface for `act-desktop-app`
+[identity]
+service = "act-desktop-app"
+type_name = "DesktopEnv"
+
+[help]
+url = "https://github.com/anticaptrad/act-desktop-app.rs"
+columns = ["options", "env", "type", "default", "description"]
+
+[parse]
+allow_unknown = false
+
+[flags.act-desktop-app-bind]
+env = "ACT_DESKTOP_APP_BIND"
+long = "act-desktop-app-bind"
+type = "string"
+default = "127.0.0.1:9090"
+help = "Runtime environment key ACT_DESKTOP_APP_BIND."
