@@ -40,6 +40,31 @@ The control bridge is not a video pipe. The planned media layers are:
 A slow preview must not stall ingest or egress. A slow output receives an
 explicit degraded/recovering state and may drop video frames according to policy.
 
+## Offline creator data plane
+
+The post-production path is independently runnable through `act-render`. It
+lives in the pure-Rust `act-creator-renderer` workspace crate, while the Qt
+executable consumes its API without putting QML in the headless data plane:
+
+```text
+act-interfaces creator project
+          │ strict identity, path, digest, rights, timeline validation
+          ▼
+Rust render planner
+          │ typed argument vectors and anti-aliased Rust text overlays
+          ▼
+FFmpeg segments → transitions → cue mix → clips/variations
+          │
+          ▼
+FFprobe + SHA-256 → private render receipt
+```
+
+This path handles camera concepts, licensed stock, title/interstitial cards,
+motion, captions, sound cues, loudness, and aspect-ratio variants without using
+QML as a media transport. Existing outputs are never overwritten. The receipt
+can authorize a later private upload workflow, but it cannot authorize public
+publication.
+
 ## WebRTC and signaling
 
 `webrtc-rs` is the selected Rust WebRTC implementation. Tokio owns timers,

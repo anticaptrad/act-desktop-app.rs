@@ -1,12 +1,17 @@
+#[allow(clippy::all, clippy::pedantic)]
 #[path = "../generated/rust/env.rs"]
+#[rustfmt::skip]
 mod env;
+#[allow(clippy::all, clippy::pedantic)]
 #[path = "../generated/rust/runtime.rs"]
+#[rustfmt::skip]
 mod env_runtime;
 
 pub mod bridge;
 pub mod core;
 pub mod runtime;
 
+use act_creator_renderer::RENDERER_NAME;
 use cxx_qt::casting::Upcast;
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQmlEngine, QUrl};
 use std::pin::Pin;
@@ -20,6 +25,12 @@ fn main() {
         )
         .with_target(false)
         .init();
+
+    tracing::info!(
+        stack = runtime::RuntimeSupervisor::stack_summary(),
+        renderer = RENDERER_NAME,
+        "starting native studio"
+    );
 
     let mut application = QGuiApplication::new();
     let mut engine = QQmlApplicationEngine::new();

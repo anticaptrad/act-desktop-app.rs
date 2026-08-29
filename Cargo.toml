@@ -8,7 +8,12 @@ description = "Native AntiCapTrad desktop studio: Qt Quick/QML over a Rust media
 repository = "https://github.com/anticaptrad/act-desktop-app.rs"
 default-run = "act-desktop-app"
 
+[workspace]
+members = ["crates/act-creator-renderer"]
+resolver = "3"
+
 [dependencies]
+act-creator-renderer = { path = "crates/act-creator-renderer" }
 anyhow = "1"
 cxx = "1"
 cxx-qt = "0.9.1"

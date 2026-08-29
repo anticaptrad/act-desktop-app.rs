@@ -32,12 +32,33 @@ The initial application includes:
 - a dedicated multi-threaded Tokio media runtime;
 - a real UDP loopback diagnostic callable from the UI;
 - validated signaling endpoint and real-time queue-budget domain types;
+- a private-first native FFmpeg renderer pinned to the versioned
+  `act-interfaces` creator-media contract;
+- rights-aware camera/stock/title/interstitial timelines with typed motion,
+  transitions, captions, sound cues, and loudness normalization;
+- landscape, portrait, and square masters, variations, and 30–50 second clips;
+- checksum- and FFprobe-backed render receipts for private upload review;
 - `webrtc-rs` linked with its Tokio runtime backend;
 - unit tests and strict Clippy gates.
 
 Destination credentials are intentionally not accepted by this UI slice. They
 belong in the platform's server-side secret store and should be exposed through
 short-lived, least-privilege session grants.
+
+The headless renderer is isolated in the pure-Rust `act-creator-renderer`
+workspace crate, so it remains independently linkable and testable without a
+Qt/QML runtime:
+
+```sh
+cargo run -p act-creator-renderer --bin act-render -- \
+  /absolute/project-root/project.json \
+  /absolute/project-root \
+  /absolute/project-root/render-receipt.json
+```
+
+It never overwrites a media output or receipt. See
+[`docs/CREATOR_RENDERER.md`](docs/CREATOR_RENDERER.md) for the project contract,
+supported editing stages, safety gates, and end-to-end verification.
 
 ## Development
 
@@ -73,8 +94,9 @@ cargo clippy --all-targets --locked -- -D warnings
 - Remote signaling requires HTTPS or WSS; cleartext is loopback-only.
 
 See [`docs/DESKTOP_TOOLKIT.md`](docs/DESKTOP_TOOLKIT.md) for the framework
-decision and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the media and
-signaling boundaries.
+decision, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the media and
+signaling boundaries, and [`docs/CREATOR_RENDERER.md`](docs/CREATOR_RENDERER.md)
+for native post-production.
 
 ## Upstream documentation
 
