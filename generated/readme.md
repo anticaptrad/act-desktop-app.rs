@@ -1,35 +1,53 @@
-# Generated output — do not edit directly
+# `generated/` — ACT desktop configuration projections
 
-Everything in this directory except this notice is derivative output. Change the human-authored source, run the owning generator, and review the complete regenerated diff. Do not patch a language-specific artifact by hand.
+**Do not edit files in this directory directly.** Everything here except this
+notice and `manifest.json` is derivative output. Change the documented
+human-authored source, run the pinned generator, and review the complete diff.
 
-## Current source map
+## What belongs here
 
-The committed Dart, Gleam, Rust, and TypeScript `env` and `runtime` files are configuration projections generated from the repository-root `.cli-flags.toml` catalog by the flags-2-env toolchain. `.cli-flags.toml` remains the authority for those CLI/environment settings.
+`act-desktop-app.rs` is a native Rust + Qt Quick/QML application. The retained
+configuration projection is Rust-only because this repository's executable
+imports `generated/rust/env.rs` and `generated/rust/runtime.rs`. Dart, Gleam,
+and TypeScript bindings belong in their actual Flutter, client, interface, or
+package repositories rather than this native desktop repository.
 
-A CLI/environment catalog is not an application-domain, IPC, or network protocol. It therefore does **not** require a duplicate TypeSpec model merely to satisfy a file-layout rule. The generated-policy workflow treats this configuration projection separately and requires `.cli-flags.toml` to change whenever those files change.
+This desktop application does not expose a general-purpose inbound API merely
+because it consumes generated types. Its UI boundary is Qt Quick/QML ↔ CXX-Qt ↔
+Rust. The inspected networking exception is a loopback UDP transport diagnostic.
+Any future local listener must be explicitly documented, purpose-limited,
+loopback-only by default, and authenticated when it crosses a trust boundary.
 
-## Semantic cross-language contracts
+## Authority classification
 
-When this tree contains generated domain models, persisted interchange, local IPC, or remote wire types, TypeSpec and JSON Schema/OpenAPI must be independent, human-authored peer authorities. Neither may be generated from the other as the ultimate source of truth. Their independently generated normalized outputs must agree, and a machine-readable reconciliation receipt must be committed under `../contracts/parity/` before derivative output changes are mergeable.
+`.cli-flags.toml` is the human-authored source for CLI and process-environment
+configuration. `generated/json-schema/env.*.schema.json` files are derivative
+runtime-validation witnesses produced from that catalog.
 
-A JSON Schema placed below `generated/` is itself derivative output and does not count as the human-authored JSON Schema/OpenAPI authority.
+They are **not** independent domain/API contract authorities. When ACT
+introduces shared serialized domain, API, HTTP, RPC, event, persistence, IPC, or
+durable-storage contracts, TypeSpec and JSON Schema/OpenAPI must be independent,
+human-authored peer authorities outside `generated/`. Neither may overwrite the
+other. Translations are comparison evidence only; an unexplained mismatch is
+`STOPPED_FOR_EVALUATION`.
 
-## Desktop boundary
+## Regenerate and verify
 
-This native desktop application does not need to expose a public network API merely because it consumes generated types. Qt/QML owns presentation; Rust owns validation, domain logic, persistence, networking, and security. Generate contracts only for a real boundary such as configuration, persisted state, local IPC, or an explicit remote service—not for widget or QML implementation details.
-
-## Regenerate and freeze
-
-Temporarily thaw only this tree before running the documented generator:
+The pinned generator revision and exact command are recorded in
+`generated/manifest.json`.
 
 ```sh
-chmod -R u+w generated
+bash scripts/generate-config.sh
+python3 scripts/generated_guard.py check --root . --require-manifest --require-frozen
+git diff --exit-code -- generated/
 ```
 
-After regeneration and review, freeze it locally:
+The script deliberately removes stale Dart, Gleam, and TypeScript projections
+before running Rust-only generation.
 
-```sh
-find generated -depth -exec chmod a-w {} +
-```
+## Read-only policy
 
-Git stores the regular-versus-executable bit, not arbitrary owner-write bits. A fresh checkout therefore restores ordinary files as writable even if a prior working tree used mode `0444`. CI is the durable merge control; `chmod a-w` is a checkout-local deterrent and is reapplied by the generated-source policy workflow.
+After generation, files are frozen without write bits and directories are
+frozen while idle. Git does not persist Unix write bits, so this local safeguard
+must be restored after checkout or regeneration. Deterministic regeneration and
+the clean-diff CI gate are the durable controls.
