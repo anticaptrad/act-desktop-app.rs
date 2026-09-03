@@ -1,0 +1,4 @@
+generated/** linguist-generated=true
+generated/readme.md linguist-generated=false
+generated/**/*.rs text eol=lf
+generated/**/*.json text eol=lf

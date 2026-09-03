@@ -1,0 +1,116 @@
+name: Generated source policy
+
+on:
+  pull_request:
+    paths:
+      - "generated/**"
+      - "contracts/**"
+      - "policy/generated-*"
+      - "scripts/generate-config.sh"
+      - "scripts/generated_guard.py"
+      - ".cli-flags.toml"
+      - ".gitattributes"
+      - ".github/workflows/generated-policy.yml"
+  push:
+    branches: [main]
+    paths:
+      - "generated/**"
+      - "contracts/**"
+      - "policy/generated-*"
+      - "scripts/generate-config.sh"
+      - "scripts/generated_guard.py"
+      - ".cli-flags.toml"
+      - ".gitattributes"
+      - ".github/workflows/generated-policy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generated-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+
+      - name: Install pinned flags-2-env generator
+        run: |
+          cargo install \
+            --git https://github.com/flags-2-env/flags-2-env-cli \
+            --rev a79daa64fcfeb31d8052d92273e8b78472c78b20 \
+            --bin f2e
+
+      - name: Regenerate Rust-only configuration projection
+        run: bash scripts/generate-config.sh
+
+      - name: Reject generated drift
+        run: git diff --exit-code -- generated/
+
+      - name: Validate provenance and local freeze
+        run: python3 scripts/generated_guard.py check --root . --require-manifest --require-frozen
+
+      - name: Classify generated changes and enforce their authorities
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-only "${BASE_SHA}...HEAD")
+
+          configuration_generated="$(
+            printf '%s\n' "${changed[@]}" \
+              | grep -E '^generated/(dart/(env|runtime)\.dart|gleam/(env|runtime)\.gleam|rust/(env|runtime)\.rs|typescript/(env|runtime)\.ts|json-schema/env\.(os|values)\.schema\.json)$' \
+              || true
+          )"
+          configuration_source="$(
+            printf '%s\n' "${changed[@]}" \
+              | grep -E '^(\.cli-flags\.toml|scripts/generate-config\.sh|policy/generated-(readme\.md|manifest\.json)|\.github/workflows/generated-policy\.yml)$' \
+              || true
+          )"
+
+          if [[ -n "$configuration_generated" && -z "$configuration_source" ]]; then
+            echo "::error::generated configuration changed without its catalog, pinned generator procedure, or reviewed policy source"
+            printf 'Configuration output changed:\n%s\n' "$configuration_generated"
+            exit 1
+          fi
+
+          semantic_generated="$(
+            printf '%s\n' "${changed[@]}" \
+              | grep -E '^generated/' \
+              | grep -Ev '^generated/(readme\.md|README\.md|manifest\.json|dart/(env|runtime)\.dart|gleam/(env|runtime)\.gleam|rust/(env|runtime)\.rs|typescript/(env|runtime)\.ts|json-schema/env\.(os|values)\.schema\.json)$' \
+              || true
+          )"
+
+          if [[ -z "$semantic_generated" ]]; then
+            exit 0
+          fi
+
+          typespec_changed="$(printf '%s\n' "${changed[@]}" | grep -E '^contracts/typespec/.*\.tsp$' || true)"
+          json_changed="$(printf '%s\n' "${changed[@]}" | grep -E '^contracts/(json-schema|openapi)/.*\.(json|ya?ml)$' || true)"
+          parity_changed="$(printf '%s\n' "${changed[@]}" | grep -E '^contracts/parity/.*\.json$' || true)"
+
+          [[ -n "$typespec_changed" ]] || {
+            echo "::error::semantic generated output requires an independently human-authored TypeSpec authority change"
+            exit 1
+          }
+          [[ -n "$json_changed" ]] || {
+            echo "::error::semantic generated output requires a peer JSON Schema/OpenAPI authority change"
+            exit 1
+          }
+          [[ -n "$parity_changed" ]] || {
+            echo "::error::semantic generated output requires a machine-readable parity receipt"
+            exit 1
+          }
+
+          printf 'Semantic generated files changed:\n%s\n' "$semantic_generated"
+          echo "Peer-authority inputs and reconciliation evidence changed in the same pull request."

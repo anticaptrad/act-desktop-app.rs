@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/anticaptrad/act-desktop-app.rs/main/policy/generated-manifest.schema.json",
+  "title": "Generated artifact provenance manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "classification",
+    "authorities",
+    "generators",
+    "outputs",
+    "peerContractAuthority",
+    "permissions"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "classification": {
+      "enum": [
+        "configuration_projection",
+        "contract_projection",
+        "api_docs_projection",
+        "mixed_configuration_and_api_docs_projection"
+      ]
+    },
+    "authorities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "role",
+          "humanAuthored"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "humanAuthored": {
+            "type": "boolean"
+          },
+          "digest": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "generators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "command"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repository": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{7,64}$"
+          },
+          "version": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "commit"
+            ]
+          },
+          {
+            "required": [
+              "version"
+            ]
+          }
+        ]
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "role",
+          "consumers"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "type": "string"
+          },
+          "consumers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "forbiddenOutputDirectories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^/]+$"
+      },
+      "uniqueItems": true
+    },
+    "peerContractAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applies",
+        "rule"
+      ],
+      "properties": {
+        "applies": {
+          "type": "boolean"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "typeSpecPath": {
+          "type": "string"
+        },
+        "jsonSchemaOrOpenApiPath": {
+          "type": "string"
+        },
+        "mismatchStatus": {
+          "const": "STOPPED_FOR_EVALUATION"
+        }
+      }
+    },
+    "desktopBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inboundApi",
+        "ui"
+      ],
+      "properties": {
+        "inboundApi": {
+          "type": "string"
+        },
+        "ui": {
+          "type": "string"
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactMode",
+        "directoryMode",
+        "gitCaveat"
+      ],
+      "properties": {
+        "artifactMode": {
+          "const": "0444"
+        },
+        "directoryMode": {
+          "const": "0555"
+        },
+        "gitCaveat": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
