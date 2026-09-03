@@ -58,7 +58,7 @@ jobs:
       - name: Validate provenance and local freeze
         run: python3 scripts/generated_guard.py check --root . --require-manifest --require-frozen
 
-      - name: Enforce peer authorities for semantic generated contracts
+      - name: Classify generated changes and enforce their authorities
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -67,10 +67,27 @@ jobs:
           set -euo pipefail
           mapfile -t changed < <(git diff --name-only "${BASE_SHA}...HEAD")
 
+          configuration_generated="$(
+            printf '%s\n' "${changed[@]}" \
+              | grep -E '^generated/(dart/(env|runtime)\.dart|gleam/(env|runtime)\.gleam|rust/(env|runtime)\.rs|typescript/(env|runtime)\.ts|json-schema/env\.(os|values)\.schema\.json)$' \
+              || true
+          )"
+          configuration_source="$(
+            printf '%s\n' "${changed[@]}" \
+              | grep -E '^(\.cli-flags\.toml|scripts/generate-config\.sh|policy/generated-(readme\.md|manifest\.json)|\.github/workflows/generated-policy\.yml)$' \
+              || true
+          )"
+
+          if [[ -n "$configuration_generated" && -z "$configuration_source" ]]; then
+            echo "::error::generated configuration changed without its catalog, pinned generator procedure, or reviewed policy source"
+            printf 'Configuration output changed:\n%s\n' "$configuration_generated"
+            exit 1
+          fi
+
           semantic_generated="$(
             printf '%s\n' "${changed[@]}" \
               | grep -E '^generated/' \
-              | grep -Ev '^generated/(readme\.md|manifest\.json|rust/(env|runtime)\.rs|json-schema/env\.(os|values)\.schema\.json)$' \
+              | grep -Ev '^generated/(readme\.md|README\.md|manifest\.json|dart/(env|runtime)\.dart|gleam/(env|runtime)\.gleam|rust/(env|runtime)\.rs|typescript/(env|runtime)\.ts|json-schema/env\.(os|values)\.schema\.json)$' \
               || true
           )"
 
