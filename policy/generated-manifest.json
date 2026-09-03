@@ -1,0 +1,79 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anticaptrad/act-desktop-app.rs/main/policy/generated-manifest.schema.json",
+  "schemaVersion": 1,
+  "classification": "configuration_projection",
+  "authorities": [
+    {
+      "path": ".cli-flags.toml",
+      "role": "single_source_for_cli_and_environment_configuration",
+      "humanAuthored": true
+    }
+  ],
+  "generators": [
+    {
+      "name": "flags-2-env",
+      "repository": "flags-2-env/flags-2-env-cli",
+      "commit": "a79daa64fcfeb31d8052d92273e8b78472c78b20",
+      "command": "f2e generate .cli-flags.toml --out generated --name DesktopEnv --lang rust"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "generated/rust",
+      "role": "configuration_types_and_runtime_loader",
+      "language": "rust",
+      "consumers": [
+        "src/main.rs"
+      ]
+    },
+    {
+      "path": "generated/json-schema",
+      "role": "derived_validation_witness",
+      "language": "json-schema-2020-12",
+      "consumers": [
+        "scripts/generated_guard.py",
+        "CI"
+      ]
+    },
+    {
+      "path": "generated/readme.md",
+      "role": "generated_tree_ownership_documentation",
+      "language": "markdown",
+      "consumers": [
+        "contributors",
+        "reviewers"
+      ]
+    },
+    {
+      "path": "generated/manifest.json",
+      "role": "machine_readable_provenance",
+      "language": "json",
+      "consumers": [
+        "scripts/generated_guard.py",
+        "CI"
+      ]
+    }
+  ],
+  "forbiddenOutputDirectories": [
+    "dart",
+    "gleam",
+    "typescript"
+  ],
+  "peerContractAuthority": {
+    "applies": false,
+    "rule": "When shared serialized domain/API/persistence contracts are introduced, TypeSpec and JSON Schema/OpenAPI are independent human-authored peer authorities outside generated/.",
+    "mismatchStatus": "STOPPED_FOR_EVALUATION"
+  },
+  "desktopBoundary": {
+    "inboundApi": "none_general_purpose",
+    "ui": "Qt Quick/QML <-> CXX-Qt <-> Rust",
+    "exceptions": [
+      "loopback UDP media/signaling transport diagnostic"
+    ]
+  },
+  "permissions": {
+    "artifactMode": "0444",
+    "directoryMode": "0555",
+    "gitCaveat": "Git does not persist Unix write bits; restore after checkout and enforce deterministic regeneration in CI."
+  }
+}
