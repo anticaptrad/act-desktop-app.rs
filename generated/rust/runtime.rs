@@ -2,9 +2,17 @@
 #![allow(dead_code)]
 
 /// Runtime values read from a lookup of env keys.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct DesktopEnvValues {
     pub act_desktop_app_bind: String,
+}
+
+impl std::fmt::Debug for DesktopEnvValues {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DesktopEnvValues")
+            .field("act_desktop_app_bind", &self.act_desktop_app_bind)
+            .finish()
+    }
 }
 
 /// Pure: resolve values from an explicit lookup.
@@ -118,11 +126,7 @@ fn parse_dotenv(text: &str) -> std::collections::BTreeMap<String, String> {
             continue;
         };
         let key = key.trim();
-        if key.is_empty() {
-            continue;
-        }
-        let first = key.chars().next().unwrap_or('\0');
-        if !(first.is_ascii_alphabetic() || first == '_') {
+        if !is_dotenv_key(key) {
             continue;
         }
         out.insert(key.to_string(), unquote(value));
@@ -130,23 +134,56 @@ fn parse_dotenv(text: &str) -> std::collections::BTreeMap<String, String> {
     out
 }
 
-fn dotenv_enabled() -> bool {
-    match std::env::var("FLAGS2ENV_DOTENV") {
-        Ok(value) if matches!(value.trim(), "0" | "false" | "FALSE" | "no" | "NO") => false,
-        _ => true,
+fn is_dotenv_key(key: &str) -> bool {
+    let mut chars = key.chars();
+    match chars.next() {
+        Some(first) if first.is_ascii_alphabetic() || first == '_' => {
+            chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        }
+        _ => false,
     }
+}
+
+fn is_safe_dotenv_path(path: &str) -> bool {
+    if path.is_empty() || path.contains('\0') {
+        return false;
+    }
+    let parsed = std::path::Path::new(path);
+    if parsed.is_absolute() {
+        return false;
+    }
+    if parsed
+        .components()
+        .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return false;
+    }
+    matches!(
+        parsed.file_name().and_then(|name| name.to_str()),
+        Some(name) if name == ".env" || name.starts_with(".env.")
+    )
+}
+
+fn dotenv_enabled() -> bool {
+    !matches!(
+        std::env::var("FLAGS2ENV_DOTENV"),
+        Ok(value) if matches!(value.trim(), "0" | "false" | "FALSE" | "no" | "NO")
+    )
 }
 
 fn load_dotenv_files(files: &[&str]) -> std::collections::BTreeMap<String, String> {
     if !dotenv_enabled() {
         return std::collections::BTreeMap::new();
     }
-    files.iter().fold(std::collections::BTreeMap::new(), |mut acc, path| {
-        if let Ok(text) = std::fs::read_to_string(path) {
-            acc.extend(parse_dotenv(&text));
-        }
-        acc
-    })
+    files.iter().filter(|path| is_safe_dotenv_path(path)).fold(
+        std::collections::BTreeMap::new(),
+        |mut acc, path| {
+            if let Ok(text) = std::fs::read_to_string(path) {
+                acc.extend(parse_dotenv(&text));
+            }
+            acc
+        },
+    )
 }
 
 fn shell_env() -> std::collections::BTreeMap<String, String> {
@@ -164,10 +201,126 @@ pub fn load_env_map(
     if let Some(value) = act_desktop_app_bind {
         out.insert("ACT_DESKTOP_APP_BIND".to_string(), value);
     }
-    Ok(out)
+    match check_os_env(&out) {
+        Ok(()) => Ok(out),
+        Err(errors) => Err(contract_error_to_missing(&errors[0])),
+    }
 }
 
 /// Effectful overlay: `.env` files then the process environment, ranked per key.
 pub fn load_env_map_from_os() -> Result<std::collections::BTreeMap<String, String>, MissingEnv> {
-    load_env_map(&shell_env(), &load_dotenv_files(&[".env"]), &std::collections::BTreeMap::new())
+    load_env_map(&shell_env(), &load_dotenv_files(&[]), &std::collections::BTreeMap::new())
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContractError {
+    pub path: String,
+    pub message: String,
+}
+
+impl std::fmt::Display for ContractError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.path, self.message)
+    }
+}
+
+/// Validate the resolved env map against the generated JSON Schema rules.
+/// Call this at runtime (after overlay), not only at compile time.
+pub fn check_os_env(
+    env: &std::collections::BTreeMap<String, String>,
+) -> Result<(), Vec<ContractError>> {
+    let mut errors = Vec::new();
+    if let Some(raw) = env.get("ACT_DESKTOP_APP_BIND").map(|value| value.trim()).filter(|value| !value.is_empty()) {
+        if let Some(message) = contract_check_string(raw) {
+            errors.push(ContractError { path: "ACT_DESKTOP_APP_BIND".into(), message });
+        }
+    }
+    for key in env.keys() {
+        if !KNOWN_ENV_KEYS.contains(&key.as_str()) {
+            errors.push(ContractError {
+                path: key.clone(),
+                message: "additional property not in the env contract".into(),
+            });
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
+    }
+}
+
+fn contract_error_to_missing(error: &ContractError) -> MissingEnv {
+    match error.path.as_str() {
+        "ACT_DESKTOP_APP_BIND" => MissingEnv { name: "ACT_DESKTOP_APP_BIND", expected_type: "string", examples: &["127.0.0.1:8080", "0.0.0.0:8080"] },
+        _ => MissingEnv {
+            name: "ENV_CONTRACT",
+            expected_type: "json-schema-2020-12",
+            examples: &[],
+        },
+    }
+}
+
+pub fn assert_os_env(env: &std::collections::BTreeMap<String, String>) {
+    if let Err(errors) = check_os_env(env) {
+        panic!(
+            "environment contract violated: {}",
+            errors
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("; ")
+        );
+    }
+}
+
+const KNOWN_ENV_KEYS: &[&str] = &["ACT_DESKTOP_APP_BIND", ];
+
+
+fn contract_check_string(raw: &str) -> Option<String> {
+    if raw.is_empty() {
+        Some("empty string".into())
+    } else {
+        None
+    }
+}
+
+fn contract_check_bool(raw: &str) -> Option<String> {
+    match raw {
+        "0" | "1" | "true" | "false" | "TRUE" | "FALSE" | "yes" | "no" | "YES" | "NO" => None,
+        _ => Some(format!("not a bool env token: {raw}")),
+    }
+}
+
+fn contract_check_int(raw: &str) -> Option<String> {
+    raw.parse::<i64>().err().map(|err| err.to_string())
+}
+
+fn contract_check_float(raw: &str) -> Option<String> {
+    raw.parse::<f64>().err().map(|err| err.to_string())
+}
+
+fn contract_check_json(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if (trimmed.starts_with('{') && trimmed.ends_with('}'))
+        || (trimmed.starts_with('[') && trimmed.ends_with(']'))
+    {
+        None
+    } else {
+        Some("expected JSON object or array string".into())
+    }
+}
+
+pub const OS_ENV_SCHEMA_JSON: &str = "{\n  \"$id\": \"https://github.com/flags-2-env/flags-2-env-cli/generated/json-schema/act-desktop-app/env.os.schema.json\",\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"additionalProperties\": false,\n  \"description\": \"Resolved environment map for DesktopEnv after flags-2-env overlay (flags > env_shell > env_file unless reordered). Values are still strings, as the OS stores them. Validate this object at runtime with `check_os_env` or `f2e check-contract`; do not hand-edit generated sources.\",\n  \"properties\": {\n    \"ACT_DESKTOP_APP_BIND\": {\n      \"description\": \"Runtime environment key ACT_DESKTOP_APP_BIND.\",\n      \"examples\": [\n        \"127.0.0.1:8080\",\n        \"0.0.0.0:8080\"\n      ],\n      \"minLength\": 1,\n      \"type\": \"string\",\n      \"x-env-key\": \"ACT_DESKTOP_APP_BIND\",\n      \"x-flag-type\": \"string\"\n    }\n  },\n  \"title\": \"DesktopEnv resolved environment\",\n  \"type\": \"object\",\n  \"x-flags-2-env\": {\n    \"generator\": \"flags-2-env\",\n    \"service\": \"act-desktop-app\",\n    \"typeName\": \"DesktopEnv\"\n  }\n}\n";
+pub const VALUES_SCHEMA_JSON: &str = "{\n  \"$id\": \"https://github.com/flags-2-env/flags-2-env-cli/generated/json-schema/act-desktop-app/env.values.schema.json\",\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"additionalProperties\": false,\n  \"description\": \"Parsed flags-2-env values for DesktopEnv. extra properties are forbidden.\",\n  \"properties\": {\n    \"act_desktop_app_bind\": {\n      \"minLength\": 1,\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"act_desktop_app_bind\"\n  ],\n  \"title\": \"DesktopEnvValues\",\n  \"type\": \"object\",\n  \"x-flags-2-env\": {\n    \"generator\": \"flags-2-env\",\n    \"service\": \"act-desktop-app\",\n    \"typeName\": \"DesktopEnv\"\n  }\n}\n";
+
+/// Like `load_from`, but errors when a required key is missing or empty.
+pub fn try_load_from(lookup: impl Fn(&str) -> Option<String>) -> Result<DesktopEnvValues, MissingEnv> {
+    let values = load_from(lookup);
+    Ok(values)
+}
+
+/// Effectful: read the process environment, erroring on missing required keys.
+pub fn try_load_from_os() -> Result<DesktopEnvValues, MissingEnv> {
+    try_load_from(|key| std::env::var(key).ok())
 }
