@@ -1,0 +1,22 @@
+name: Cross-platform parity
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      require_complete:
+        description: Require complete feature evidence
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    uses: ORESoftware/my-ai/.github/workflows/reusable-cross-platform-parity.yml@feat/cross-platform-parity-reusable-20260902
+    with:
+      require_complete: ${{ github.event_name == 'workflow_dispatch' && inputs.require_complete || false }}
