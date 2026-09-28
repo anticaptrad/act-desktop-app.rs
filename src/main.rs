@@ -18,6 +18,13 @@ use std::pin::Pin;
 use tracing_subscriber::EnvFilter;
 
 fn main() {
+    // Shared lifecycle logging stays local and leaves stdout available for IPC.
+    let _desktop_session = next_loggers::desktop::DesktopSession::start(
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION"),
+    )
+    .ok();
+
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env()

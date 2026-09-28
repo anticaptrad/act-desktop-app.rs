@@ -13,6 +13,7 @@ members = ["crates/act-creator-renderer"]
 resolver = "3"
 
 [dependencies]
+next-loggers = { package = "oresoftware-next-loggers", git = "https://github.com/ores-otel/ores.otel.log.git", rev = "cf8f87506afafb56517563530c40dad1df1aedb6" }
 act-creator-renderer = { path = "crates/act-creator-renderer" }
 anyhow = "1"
 cxx = "1"
